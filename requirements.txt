@@ -12,7 +12,6 @@ requests==2.1.0
 simplejson==3.3.1
 six==1.4.1
 Twisted==13.2.0
-flask-sqlalchemy==1.0
 psycopg2==2.5
 APScheduler==2.0.3
 gevent==1.01
