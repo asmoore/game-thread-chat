@@ -41,7 +41,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
 socketio = SocketIO(app)
 thread = None
 
-REDIRECT_URL = "http://127.0.0.1:5000/auth"
+REDIRECT_URL = os.environ['REDIRECT_URL']
 GTC_CLIENT_ID = os.environ['GTC_CLIENT_ID']
 GTC_SECRET = os.environ['GTC_SECRET']
 
