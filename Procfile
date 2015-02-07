@@ -1,1 +1,1 @@
-web: gunicorn -b 0.0.0.0:$PORT app:app -k gevent --max-requests 250
+web: gunicorn --worker-class socketio.sgunicorn.GeventSocketIOWorker --log-file=- server:app
