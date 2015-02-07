@@ -63,10 +63,10 @@ def fetch_box(date, game_id):
 def fetch_comments(thread_id):
     """Fetch comments json."""
     r = praw.Reddit(user_agent='catmoon using praw')
-    r.login(os.environ["user"], os.environ["pass"])
     comment_list = []
     submission = r.get_submission(submission_id=thread_id, comment_limit=10, comment_sort='new')
     flat_comments = praw.helpers.flatten_tree(submission.comments)
+    print flat_comments
     for comment in flat_comments:
     	if hasattr(comment,'body'):
             try:
@@ -86,7 +86,6 @@ def fetch_comments(thread_id):
 def fetch_comments_all():
     """Fetch comments json."""
     r = praw.Reddit(user_agent='catmoon using praw')
-    r.login(os.environ["user"], os.environ["pass"])
     comment_list = []
     subreddit = r.get_subreddit('nba')
     nba_comments = subreddit_comments = subreddit.get_comments()
