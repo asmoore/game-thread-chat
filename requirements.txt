@@ -14,7 +14,7 @@ six==1.4.1
 Twisted==13.2.0
 psycopg2==2.5
 APScheduler==2.0.3
-gevent==1.01
+gevent==1.0
 Flask==0.8
 Flask-SQLAlchemy==1.0
 Flask-SocketIO==0.4.2
