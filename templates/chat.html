@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+
+<div class="score-bar z-depth-1" >
+    <div class="row">
+        <div class="col s6 m5 center">
+            <div class="{{ visitor_key }}"></div><div class="visitor_name">{{ visitor_name }}</div> <div class="visitor_score">{{ visitor_score }}</div>
+        </div>
+        <div class="col s6 m5 offset-m2 center">
+            <div class="{{ home_key }}"></div><div class="home_name">{{ home_name }}</div> <div class="home_score">{{ home_score }}</div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container full-height">
+    <div class="mainBody">
+        <ul class="comments collection white z-depth-2" >
+            {% for comment in comment_list %}
+            <li id="comment" class="collection-item" comment_id="{{comment.comment_id}}">
+                <div class="flair-{{comment.author_flair_css_class}}"></div>
+                <div id="author"><a href="http://reddit.com/user/{{comment.author}}">{{comment.author}}</a></div>
+                <span class="secondary-content"><div id="time" created_utc="{{comment.created_utc}}"></div><div class="reply" id="{{comment.comment_id}}"><i class="fa fa-reply fa-sm"></i></div></span>
+                <div id="body">{{comment.body}}</div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="messagebox full-width z-depth-1">
+    <input type="text" name="comment" id="comment_input">
+    <button class="submit btn waves-effect waves-light" type="submit" name="submit" value="submit">Submit
+        <i class="mdi-content-send right"></i>
+    </button>
+    <div class="undo">
+        <i class="fa fa-undo fa-sm"></i>
+    </div>
+    <div class="reply_context" id="">
+      Make top level comment 
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+</div>
+
+<script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/mmd.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
+<script type="text/javascript" charset="utf-8">  
+    function addComment(comment_id, author_flair_css_class, author, body, created_utc) {
+        var comment = '<li id="comment" class="collection-item" comment_id="'+comment_id+'">'
+                            + '<div class="flair-'+author_flair_css_class+'"></div>'
+                            + '<div id="author"><a href="http://reddit.com/user/'+author+'">'+author+'</a></div>'
+                            + '<span class="secondary-content"><div id="time" created_utc="'+created_utc+'">'+moment(created_utc, "X").fromNow()+'</div><div class="reply" id="'+comment_id+'"><i class="fa fa-reply fa-sm"></i></div></span>'
+                            + '<div id="body">'+body+'</div>'
+                            + '</li>';
+        $('.comments').prepend(comment);
+        }
+
+    function updateScores(visitor, home) {
+        $('.visitor_score').html(visitor);
+        $('.home_score').html(home);
+    }
+
+    $(document).ready(function(){
+        
+        //reply to a comment
+        $('.reply').click(function() {
+            var comment_id = $( this ).attr( "id" );
+            $('.reply_context').text("Reply to " + comment_id);
+            $('.reply_context').attr("id",comment_id);
+        });
+
+        //undo reply
+        $('.undo').click(function() {
+            $('.reply_context').text("Make top level comment ");
+            $('.reply_context').attr("id","");
+        });
+
+        //submit comment using ajax
+        $('.submit').click(function() {
+            var data = {"comment": $('#comment_input').val(),
+                        "thread_id": "{{thread_id}}",
+                        "parent_id": $('.reply_context').attr("id")}
+            $.ajax({
+                type : "POST",
+                url : "{{ url_for('submit') }}",
+                data: JSON.stringify(data, null, '\t'),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(result) {
+                    console.log(result);
+                    if (result.success == 0) {
+                        alert(result.error_msg);
+                    }
+                }
+            });
+            //clear the input
+            $('#comment_input').val("");
+        });
+
+        namespace = '/chat'; // change to an empty string to use the global namespace
+        
+        // the socket.io documentation recommends sending an explicit package upon connection
+        // this is specially important when using the global namespace
+        var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+        socket.on('connect', function() {
+            socket.emit('event', {data: 'I\'m connected!'});
+        });
+
+
+        // event handler for server sent data
+        // the data is displayed in the "Received" section of the page
+        socket.on('response', function(msg) {
+            if (msg.room == "{{thread_id}}") {
+                if (msg.category == "comment") {
+                    addComment(msg.data.comment_id, msg.data.author_flair_css_class,msg.data.author, msg.data.body, msg.data.created_utc);
+                } else {
+                    updateScores(msg.data.sports_content.game.visitor.stats.points, msg.data.sports_content.game.home.stats.points);
+                }
+            }
+        });
+
+        socket.emit('join', {room: "{{thread_id}}"});
+        $('form#send_room').submit(function(event) {
+            socket.emit('room_event', {room: "{{thread_id}}", data: $('#comment_text').val()});
+            return false;
+        });
+
+    });
+  
+    $('[id=body]').each(function( index ) {
+      var raw_text = $( this ).text();
+      var markdown = mmd(raw_text);
+      $( this ).html(markdown);
+    });
+
+    //update times every ten seconds using moment.js
+    $('[id=time]').each(function( index ) {
+        var created_utc = $( this ).attr("created_utc");
+        var strTime = moment(created_utc, "X").fromNow();
+        $( this ).text(strTime);
+    });
+
+    setInterval(function () {    
+        $('[id=time]').each(function( index ) {
+            var created_utc = $( this ).attr("created_utc");
+            var strTime = moment(created_utc, "X").fromNow();
+            $( this ).text(strTime);
+        });                                            
+    }, 10000)
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-57x57.png') }}">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-72x72.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-144x144.png') }}">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-60x60.png') }}">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-76x76.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-152x152.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/favicons/apple-touch-icon-180x180.png') }}">
+    <meta name="apple-mobile-web-app-title" content="Game Thread Chat">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicons/favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicons/favicon-192x192.png') }}" sizes="192x192">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicons/favicon-160x160.png') }}" sizes="160x160">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicons/favicon-96x96.png') }}" sizes="96x96">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicons/favicon-16x16.png') }}" sizes="16x16">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicons/favicon-32x32.png') }}" sizes="32x32">
+    <meta name="msapplication-TileColor" content="#2d89ef">
+    <meta name="msapplication-TileImage" content="{{ url_for('static', filename='images/favicons/mstile-144x144.png') }}">
+    <meta name="msapplication-config" content="{{ url_for('static', filename='images/favicons/browserconfig.xml') }}">
+    <meta name="application-name" content="Game Thread Chat">
+
+  </head>
+    <title>Game Thread Chat</title>
+
+<body>
+
+<link href='http://fonts.googleapis.com/css?family=Exo:400,900' rel='stylesheet' type='text/css'>
+
+<!-- CSS !-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/materialize.min.css') }}" media="screen,projection"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gamethread-hub.css') }}" />
+
+<div class="wrapper">
+<!-- HEADER --> 
+  <header>
+  <nav>
+    <div class="nav-wrapper">
+      <a href="/" class="brand-logo">
+        <img src="{{ url_for('static', filename='images/header4.png') }}"/>
+        Game Thread Chat
+      </a>
+      <ul id="nav-mobile" class="right side-nav">
+        
+        {% if not session.username %}
+        <li><a class="modal-trigger" href="#login-modal"><i class="fa fa-reddit fa-sm"></i> Login in on reddit</a></li>
+        {% else %}
+        <li><a href="http://reddit.com/user/{{session.username}}" target="_blank"><i class="fa fa-reddit fa-sm"></i> Logged in as {{session.username}}</a></li>
+        <li><a class="modal-trigger" href="#logout-modal">Logout</a></li>
+        {% endif %}
+
+      </ul>
+      <a class="button-collapse" href="#" data-activates="nav-mobile"><i class="mdi-navigation-menu"></i></a>
+    </div>
+  </nav>
+
+  </header>
+
+ <!-- Login/Logout Structure -->
+  <div id="login-modal" class="modal">
+    <h4>Log in to reddit</h4>
+    <p>The following link will redirect you to reddit's OAuth page. Sign in there and it will bring you back to Gamethread Chat</p>
+    <a href="{{authorize_url}}">OAuth login</a>
+  </div>
+
+  <div id="logout-modal" class="modal">
+    <h4>Logout</h4>
+    <p>Are you sure you want to logout?</p>
+    <a href="{{ url_for('logout') }}">Yup</a>
+  </div>
+
+<!-- BODY -->
+
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+</div>
+</body>
+
+<!-- CSS -->
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}" />
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+<script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+<script type='text/javascript' src="/static/js/vendor/materialize.min.js"></script>
+
+<!-- SCRIPTS -->
+
+<script>
+  $(document).ready(function(){
+    // the "href" attribute of .modal-trigger must specify the modal ID that wants to be triggered
+    $('.modal-trigger').leanModal();
+  });
+
+  $(".button-collapse").sideNav();
+</script>
+</html>
