@@ -116,7 +116,6 @@ def fetch_game_list(date):
 def fetch_thread_id(home_name, visitor_name):
     """Fetch the the thread_id of a game from reddit using praw"""
     r = praw.Reddit(user_agent='catmoone using praw')
-    r.login(os.environ['USER'],os.environ['PASS'])
     submissions = r.get_subreddit('nba').get_hot(limit=100)
     thread_id = ""
     for submission in submissions:
