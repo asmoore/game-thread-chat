@@ -130,19 +130,21 @@ def get_top_scorers(date):
     games = db.session.query(Game).filter_by(game_date=date).all()
     player_list = []
     for game in games:
-        #game.scoreJSON
         if game.scoreJSON == "":
             pass
         else:
-            scoreJSON = json.loads(game.scoreJSON)
-            home = scoreJSON["sports_content"]["game"]["home"]["players"]
-            for player in home["player"]:
-                player["team_key"] = scoreJSON["sports_content"]["game"]["home"]["team_key"]
-                player_list.append(player)
-            visitor = scoreJSON["sports_content"]["game"]["visitor"]["players"]
-            for player in visitor["player"]:
-                player["team_key"] = scoreJSON["sports_content"]["game"]["visitor"]["team_key"]
-                player_list.append(player)
+            try:
+                scoreJSON = json.loads(game.scoreJSON)
+                home = scoreJSON["sports_content"]["game"]["home"]["players"]
+                for player in home["player"]:
+                    player["team_key"] = scoreJSON["sports_content"]["game"]["home"]["team_key"]
+                    player_list.append(player)
+                visitor = scoreJSON["sports_content"]["game"]["visitor"]["players"]
+                for player in visitor["player"]:
+                    player["team_key"] = scoreJSON["sports_content"]["game"]["visitor"]["team_key"]
+                    player_list.append(player)
+            except:
+                return []
     sorted_players = sorted(player_list, key=lambda x: int(x["points"]))
     sorted_players = sorted_players[::-1]
     return sorted_players[0:10]
