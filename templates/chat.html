@@ -113,7 +113,7 @@
         
         // the socket.io documentation recommends sending an explicit package upon connection
         // this is specially important when using the global namespace
-        var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+        var socket = io.connect('http://' + document.domain + ':5000' + namespace);
         //io.configure(function () { 
         //  io.set("transports", ["xhr-polling"]); 
         //  io.set("polling duration", 10); 
