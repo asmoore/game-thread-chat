@@ -202,8 +202,8 @@ def update_chat():
                         socketio.emit('response', {'data': comment_dict, 'category': 'comment', 'room':game.thread_id}, namespace="/chat")
         db.session.commit()
 
-@application.route('/socket.io/<path:remaining>')
-def socketio(remaining):
+@app.route('/socket.io/<path:remaining>')
+def socketio_route(remaining):
     print "attempted connection"
     return ""
 
@@ -215,6 +215,5 @@ if __name__ == '__main__':
     thread = Thread(target=update_chat)
     thread.start()
     socketio.run(app)
-    socketio.
 
     
