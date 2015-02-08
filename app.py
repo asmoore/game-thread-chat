@@ -202,6 +202,10 @@ def update_chat():
                         socketio.emit('response', {'data': comment_dict, 'category': 'comment', 'room':game.thread_id}, namespace="/chat")
         db.session.commit()
 
+@application.route('/socket.io/<path:remaining>')
+def socketio(remaining):
+    print "attempted connection"
+    return ""
 
 if __name__ == '__main__':
     engine = create_engine(os.environ['SQLALCHEMY_DATABASE_URI'])
@@ -211,5 +215,6 @@ if __name__ == '__main__':
     thread = Thread(target=update_chat)
     thread.start()
     socketio.run(app)
+    socketio.
 
     
