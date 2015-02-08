@@ -66,7 +66,6 @@ def fetch_comments(thread_id):
     comment_list = []
     submission = r.get_submission(submission_id=thread_id, comment_limit=10, comment_sort='new')
     flat_comments = praw.helpers.flatten_tree(submission.comments)
-    print flat_comments
     for comment in flat_comments:
     	if hasattr(comment,'body'):
             try:
