@@ -60,29 +60,7 @@ def fetch_box(date, game_id):
     return data
 
 
-def fetch_comments(thread_id):
-    """Fetch comments json."""
-    r = praw.Reddit(user_agent='catmoon using praw')
-    comment_list = []
-    submission = r.get_submission(submission_id=thread_id, comment_limit=10, comment_sort='new')
-    flat_comments = praw.helpers.flatten_tree(submission.comments)
-    for comment in flat_comments:
-    	if hasattr(comment,'body'):
-            try:
-            	comment_list.append({"author": comment.author.name, 
-                                     "body": comment.body, 
-                                     "author_flair_css_class": comment.author_flair_css_class, 
-                                     "comment_id": comment.id, 
-                                     "score": comment.score,
-                                     "created_utc": comment.created_utc, 
-                                     "emitted": "false"})
-            except:
-                pass
-    data = json.dumps(comment_list)
-    return data
-
-
-def fetch_comments_all():
+def fetch_comments():
     """Fetch comments json."""
     r = praw.Reddit(user_agent='catmoon using praw')
     comment_list = []

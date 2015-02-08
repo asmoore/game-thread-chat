@@ -78,34 +78,7 @@ def run_updates():
 
 def update_comments():
     """Update comments for each game."""
-    today = datetime.today().strftime('%Y%m%d')
-    games = db.session.query(Game).filter_by(game_date=today).all()
-    for game in games:
-        if game.thread_id == "":
-            pass
-        else:
-            JSONcomments = json.loads(utils.fetch_comments(game.thread_id))
-            for JSONcomment in JSONcomments:
-                match = False
-                for comment in game.comments:
-                    if comment.comment_id == JSONcomment["comment_id"]:
-                        match = True
-                if match == False:
-                    comment = Comment(author = JSONcomment["author"],
-                                      body = JSONcomment["body"],
-                                      author_flair_css_class = JSONcomment["author_flair_css_class"], 
-                                      comment_id = JSONcomment["comment_id"], 
-                                      score = JSONcomment["score"],
-                                      created_utc = JSONcomment["created_utc"],
-                                      emitted = "false")
-                    game.comments.append(comment)  
-        db.session.commit()
-    return True
-
-
-def update_comments_all():
-    """Update comments for each game."""
-    new_comments = json.loads(utils.fetch_comments_all())
+    new_comments = json.loads(utils.fetch_comments())
     today = datetime.today().strftime('%Y%m%d')
     games = db.session.query(Game).filter_by(game_date=today).all()
     for new_comment in new_comments:
