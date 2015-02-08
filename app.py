@@ -38,6 +38,8 @@ app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
+app.config['PORT'] = 5000
+
 socketio = SocketIO(app)
 thread = None
 
