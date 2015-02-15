@@ -8,7 +8,6 @@ utils.py
 Utility functions for Game Thread Chat.
 
 """
-
 import json
 import os
 import urllib2
@@ -37,7 +36,7 @@ def create_child_comment(thread_id, access_token, refresh_token, body, parent_id
     comment = parent.reply(body)
     return True
 
-    
+
 def create_top_level_comment(thread_id, access_token, refresh_token, body):
     """Create a top-level comment"""
     REDIRECT_URL = "http://127.0.0.1:5000/auth"

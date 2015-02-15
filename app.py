@@ -14,17 +14,15 @@ monkey.patch_all()
 
 from datetime import datetime, timedelta
 import time
-from threading import Thread
 import os
 import json
 import sys
 
 from flask import Flask, flash, render_template, session, request, redirect, url_for, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.socketio import SocketIO, emit, join_room, leave_room
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
+from flask_sockets import Sockets
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 import praw
 
 from models import *
@@ -40,8 +38,8 @@ app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
 app.config['PORT'] = 5000
 
-socketio = SocketIO(app)
-thread = None
+app = Flask(__name__)
+sockets = Sockets(app)
 
 REDIRECT_URL = os.environ['REDIRECT_URL']
 GTC_CLIENT_ID = os.environ['GTC_CLIENT_ID']
@@ -50,8 +48,50 @@ GTC_SECRET = os.environ['GTC_SECRET']
 r = praw.Reddit('OAuth gamethread chat by /u/catmoon')
 r.set_oauth_app_info(GTC_CLIENT_ID, GTC_SECRET, REDIRECT_URL)
 
+#######################
+#### routes ####
+#######################
+
+
+@sockets.route('/echo')
+def echo_socket(ws):
+    while True:
+        #message = ws.receive()
+        test = {"author": "catmoon", 
+                 "body": "jakfakljshdfkljahdslf", 
+                 "author_flair_css_class": "Heat2", 
+                 "comment_id": "sdfasdf", 
+                 "score": "dasfsdf",
+                 "created_utc": "asdfasdf", 
+                 "emitted": "true"}
+        message = json.dumps({'message': test,'category':'comment', 'thread': 'asda'})
+        ws.send(message)
+        time.sleep(5)
+        #today = datetime.today().strftime('%Y%m%d')
+        #games = db.session.query(Game).filter_by(game_date = today).all()        
+        #for game in games:
+        #    if game.scoreJSON:
+        #        scoreJSON = json.loads(game.scoreJSON)
+        #        ws.send({'message': scoreJSON, 'category': 'score', 'thread': game.thread_id})
+        #    if game.comments:
+        #        for comment in game.comments:
+        #            if comment.emitted == "true":
+        #                pass
+        #            else:
+        #                comment.emitted = "true"
+        #                comment_dict = {"author": comment.author, 
+        #                             "body": comment.body, 
+        #                             "author_flair_css_class": comment.author_flair_css_class, 
+        #                             "comment_id": comment.id, 
+        #                             "score": comment.score,
+        #                             "created_utc": comment.created_utc, 
+        #                             "emitted": "true"}
+        #                ws.send({'message': comment_dict, 'category': 'comment', 'thread': game.thread_id})
+        db.session.commit()
+
+
 #OAuth2 with reddit 
-@app.route("/auth/", methods=['GET'])
+@app.route("/auth/", methods = ['GET'])
 def auth():
     code = request.args.get('code', '')
     info = r.get_access_information(code)
@@ -65,12 +105,12 @@ def auth():
 
 
 #Home page
-@app.route("/", methods=['GET'])
+@app.route("/", methods = ['GET'])
 def home():
-    authorize_url = r.get_authorize_url('DifferentUniqueKey','identity edit submit',refreshable=True)
+    authorize_url = r.get_authorize_url('DifferentUniqueKey','identity edit submit',refreshable = True)
     today = datetime.today().strftime('%Y%m%d')
     yesterday = (datetime.now()-timedelta(1)).strftime('%Y%m%d')
-    games = db.session.query(Game).filter_by(game_date=today).all()
+    games = db.session.query(Game).filter_by(game_date = today).all()
     gameslist = [];
     top_users = utils.get_top_users(yesterday)
     top_scorers = utils.get_top_scorers(yesterday)
@@ -88,16 +128,16 @@ def home():
                     "period_value": game.period_value,
                     "game_id": game.id,
                     "thread_id": game.thread_id})
-    return render_template("home.html", gameslist=gameslist, authorize_url=authorize_url, top_users=top_users, top_scorers=top_scorers)
+    return render_template("home.html", gameslist = gameslist, authorize_url = authorize_url, top_users = top_users, top_scorers = top_scorers)
 
 
 #Chat page
-@app.route("/chat/<thread_id>/", methods=['GET'])
+@app.route("/chat/<thread_id>/", methods = ['GET'])
 def chat(thread_id):
-    authorize_url = r.get_authorize_url('DifferentUniqueKey',{'identity','edit','submit'},refreshable=True)
-    games = db.session.query(Game).filter_by(thread_id=thread_id).all()
-    for game in games:
-        comment_list = []
+    authorize_url = r.get_authorize_url('DifferentUniqueKey',{'identity','edit','submit'},refreshable = True)
+    games = db.session.query(Game).filter_by(thread_id = thread_id).all()
+    comment_list = []
+    for game in games: 
         if game.comments:
             for comment in game.comments:
                 comment_dict = {"author": comment.author, 
@@ -108,28 +148,28 @@ def chat(thread_id):
                              "created_utc": comment.created_utc, 
                              "emitted": "true"}
                 comment_list.append(comment_dict)
-    comment_list = sorted(comment_list, key=lambda k: k['created_utc'], reverse=True) 
-            
-    return render_template("chat.html", thread_id=thread_id, 
-                            home_key=game.home_key, visitor_key=game.visitor_key,
-                            home_name=game.home_name, visitor_name=game.visitor_name,
-                            home_score=game.home_score, visitor_score=game.visitor_score,
-                            comment_list=comment_list, authorize_url=authorize_url)    
+    comment_list = sorted(comment_list, key = lambda k: k['created_utc'], reverse = True) 
+    return render_template("chat.html", thread_id = thread_id,
+                            home_key = game.home_key, visitor_key = game.visitor_key,
+                            home_name = game.home_name, visitor_name = game.visitor_name,
+                            home_score = game.home_score, visitor_score = game.visitor_score,
+                            comment_list = comment_list, authorize_url = authorize_url)    
 
-@app.route("/submit/", methods=['GET','POST'])
+
+@app.route("/submit/", methods = ['GET','POST'])
 def submit():
     if request.method == "POST":
         comment_text = request.json['comment']
         thread_id = request.json['thread_id']
         parent_id = request.json['parent_id']
         if comment_text == "":
-            return jsonify(success=0, error_msg="try typing something!")
+            return jsonify(success = 0, error_msg = "try typing something!")
         else:
             if parent_id == "":
                 utils.create_top_level_comment(thread_id, session['access_token'], session['refresh_token'], comment_text)
             else:
                 utils.create_child_comment(thread_id, session['access_token'], session['refresh_token'], comment_text, parent_id)
-    return jsonify(success=1)
+    return jsonify(success = 1)
 
 
 @app.route('/logout')
@@ -144,76 +184,13 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
-@socketio.on('event', namespace='/chat')
-def test_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
+@app.errorhandler(500)
+def page_not_found(e):
+    return render_template('500.html'), 500
 
-
-@socketio.on('join', namespace='/chat')
-def join(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-
-
-@socketio.on('room_event', namespace='/chat')
-def send_room_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-
-
-def message_external(message):
-    emit('comments',
-         {'data': message['data'], 'count': session['receive_count']},
-         room=message['room'])
-
-
-@socketio.on('connect', namespace='/chat')
-def test_connect():
-    print('Client connected')
-    #emit('my response', {'data': 'Connected', 'count': 0})
-
-
-@socketio.on('disconnect', namespace='/chat')
-def test_disconnect():
-    print('Client disconnected')
-
-
-def update_chat():
-    """Emit comments to rooms."""
-    while True:
-        time.sleep(2)
-        today = datetime.today().strftime('%Y%m%d')
-        games = db.session.query(Game).filter_by(game_date=today).all()        
-        for game in games:
-            if game.scoreJSON:
-                scoreJSON = json.loads(game.scoreJSON)
-                socketio.emit('response', {'data': scoreJSON, 'category': 'score', 'room':game.thread_id}, namespace="/chat")
-            if game.comments:
-                for comment in game.comments:
-                    if comment.emitted == "true":
-                        pass
-                    else:
-                        comment.emitted = "true"
-                        comment_dict = {"author": comment.author, 
-                                     "body": comment.body, 
-                                     "author_flair_css_class": comment.author_flair_css_class, 
-                                     "comment_id": comment.id, 
-                                     "score": comment.score,
-                                     "created_utc": comment.created_utc, 
-                                     "emitted": "true"}
-                        socketio.emit('response', {'data': comment_dict, 'category': 'comment', 'room':game.thread_id}, namespace="/chat")
-        db.session.commit()
-
-@app.route('/socket.io/<path:remaining>')
-def socketio_route(remaining):
-    print "attempted connection"
-    return ""
-
-if __name__ == '__main__':
-    engine = create_engine(os.environ['SQLALCHEMY_DATABASE_URI'])
-    Session = sessionmaker(bind=engine)    
-    app_session = Session()
-    app_session._model_changes = {}
-    thread = Thread(target=update_chat)
-    thread.start()
-    socketio.run(app)
+if __name__ == "__main__":
+    server = pywsgi.WSGIServer(('', 5000), app, handler_class = WebSocketHandler)
+    server.serve_forever()
+    app.run()
 
     

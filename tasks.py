@@ -21,7 +21,6 @@ from sqlalchemy.sql import exists
 import utils
 from models import *
 
-
 def add_games():
     """Initiate today's games."""
     ## Make sure that the production server is set to EST timezone
@@ -56,7 +55,6 @@ def add_games():
     db.session.commit()
     return True
 
-
 def run_updates():
     """
     run comment and boxscore updates every "sleep_time" seconds. 
@@ -66,7 +64,6 @@ def run_updates():
     minutes and then Heroku will kill it when it runs again.
     
     """
-
     sleep_time = 5
     while True:
         update_thread_ids()
@@ -74,7 +71,6 @@ def run_updates():
         update_games()
         time.sleep(sleep_time)
     return True
-
 
 def update_comments():
     """Update comments for each game."""
@@ -98,7 +94,6 @@ def update_comments():
     db.session.commit()
     return True
 
-
 def update_games():
     """update the scores and game status for each game."""
     date = datetime.today().strftime('%Y%m%d')
@@ -114,7 +109,6 @@ def update_games():
     db.session.commit()
     return True
 
-
 def update_thread_ids():
     """Update thread_id for each game."""
     today = datetime.today().strftime('%Y%m%d')
@@ -127,7 +121,6 @@ def update_thread_ids():
             pass
     db.session.commit()
     return True
-
 
 if __name__ == '__main__':
     engine = create_engine(os.environ['SQLALCHEMY_DATABASE_URI'])
@@ -146,4 +139,4 @@ if __name__ == '__main__':
     elif '-run_updates' in sys.argv:
         run_updates()
     else:
-        print "no arguments"
+        run_updates()

@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-
-
 <div class="score-bar z-depth-1" >
     <div class="row">
         <div class="col s6 m5 center">
@@ -14,12 +12,15 @@
     </div>
 </div>
 
-
 <div class="container full-height">
     <div class="mainBody">
         <ul class="comments collection white z-depth-2" >
             {% for comment in comment_list %}
             <li id="comment" class="collection-item" comment_id="{{comment.comment_id}}">
+                <div class="midcol unvoted" >
+                <div class="arrow up login-required" onclick="$(this).vote(r.config.vote_hash, null, event)" role="button" aria-label="upvote" tabindex="0" ></div>
+                <div class="arrow down login-required" onclick="$(this).vote(r.config.vote_hash, null, event)" role="button" aria-label="downvote" tabindex="0" ></div>
+            </div>
                 <div class="flair-{{comment.author_flair_css_class}}"></div>
                 <div id="author"><a href="http://reddit.com/user/{{comment.author}}">{{comment.author}}</a></div>
                 <span class="secondary-content"><div id="time" created_utc="{{comment.created_utc}}"></div><div class="reply" id="{{comment.comment_id}}"><i class="fa fa-reply fa-sm"></i></div></span>
@@ -54,24 +55,39 @@
 </div>
 
 <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/vendor/mmd.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
-<script type="text/javascript" charset="utf-8">  
+
+<script type="text/javascript">
     function addComment(comment_id, author_flair_css_class, author, body, created_utc) {
         var comment = '<li id="comment" class="collection-item" comment_id="'+comment_id+'">'
-                            + '<div class="flair-'+author_flair_css_class+'"></div>'
-                            + '<div id="author"><a href="http://reddit.com/user/'+author+'">'+author+'</a></div>'
-                            + '<span class="secondary-content"><div id="time" created_utc="'+created_utc+'">'+moment(created_utc, "X").fromNow()+'</div><div class="reply" id="'+comment_id+'"><i class="fa fa-reply fa-sm"></i></div></span>'
-                            + '<div id="body">'+body+'</div>'
-                            + '</li>';
+                        + '<div class="flair-'+author_flair_css_class+'"></div>'
+                        + '<div id="author"><a href="http://reddit.com/user/'+author+'">'+author+'</a></div>'
+                        + '<span class="secondary-content"><div id="time" created_utc="'+created_utc
+                        +'">'+created_utc+'</div><div class="reply" id="'+comment_id+'"><i class="fa fa-reply fa-sm"></i></div></span>'
+                        + '<div id="body">'+body+'</div>'
+                        + '</li>';
         $('.comments').prepend(comment);
         }
-
+    
     function updateScores(visitor, home) {
         $('.visitor_score').html(visitor);
         $('.home_score').html(home);
     }
+
+    var ws = new WebSocket("ws://" + location.host + "/echo");
+    ws.onmessage = function(msg){ 
+        var received = JSON.parse(msg.data);
+        if (received.category == 'comment') {
+            addComment(received.message.comment_id, received.message.author_flair_css_class, received.message.author, received.message.body, received.message.created_utc);
+        } else if (received.category == 'score') {
+            updateScores(received.message.sports_content.game.visitor.stats.points, received.message.sports_content.game.home.stats.points)
+        }
+    };
+
+    ws.onopen = function(){
+        ws.send("connection opened");
+    };
 
     $(document).ready(function(){
         
@@ -108,65 +124,8 @@
             //clear the input
             $('#comment_input').val("");
         });
-
-        namespace = '/chat'; // change to an empty string to use the global namespace
-        
-        // the socket.io documentation recommends sending an explicit package upon connection
-        // this is specially important when using the global namespace
-        var hostname = 'http://' + window.location.host;
-        var socket = io.connect(hostname);
-        //var socket = io.connect('http://' + document.domain + ':5000' + namespace);
-        //io.configure(function () { 
-        //  io.set("transports", ["xhr-polling"]); 
-        //  io.set("polling duration", 10); 
-        //});
-
-        //var socket = io.connect(window.location.hostname);
-
-        socket.on('connect', function() {
-            socket.emit('event', {data: 'I\'m connected!'});
-        });
-
-
-        // event handler for server sent data
-        // the data is displayed in the "Received" section of the page
-        socket.on('response', function(msg) {
-            if (msg.room == "{{thread_id}}") {
-                if (msg.category == "comment") {
-                    addComment(msg.data.comment_id, msg.data.author_flair_css_class,msg.data.author, msg.data.body, msg.data.created_utc);
-                } else {
-                    updateScores(msg.data.sports_content.game.visitor.stats.points, msg.data.sports_content.game.home.stats.points);
-                }
-            }
-        });
-
-        socket.emit('join', {room: "{{thread_id}}"});
-        $('form#send_room').submit(function(event) {
-            socket.emit('room_event', {room: "{{thread_id}}", data: $('#comment_text').val()});
-            return false;
-        });
-
-    });
-  
-    $('[id=body]').each(function( index ) {
-      var raw_text = $( this ).text();
-      var markdown = mmd(raw_text);
-      $( this ).html(markdown);
     });
 
-    //update times every ten seconds using moment.js
-    $('[id=time]').each(function( index ) {
-        var created_utc = $( this ).attr("created_utc");
-        var strTime = moment(created_utc, "X").fromNow();
-        $( this ).text(strTime);
-    });
-
-    setInterval(function () {    
-        $('[id=time]').each(function( index ) {
-            var created_utc = $( this ).attr("created_utc");
-            var strTime = moment(created_utc, "X").fromNow();
-            $( this ).text(strTime);
-        });                                            
-    }, 10000)
 </script>
+
 {% endblock %}

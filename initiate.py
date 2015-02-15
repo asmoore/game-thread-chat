@@ -14,26 +14,17 @@ import os
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
-#######################
-#### configuration ####
-#######################
-
-initiate_app = Flask(__name__)
-initiate_app.secret_key = os.environ['SECRET_KEY']
-initiate_app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
-db = SQLAlchemy(initiate_app)
+initiate_app=Flask(__name__)
+initiate_app.secret_key=os.environ['SECRET_KEY']
+initiate_app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
+db=SQLAlchemy(initiate_app)
 
 from models import *
-
-################
-#### helper ####
-################
 
 def create_data():
     """ A helper function to create our tables and some Todo objects."""
     db.create_all()
     db.session.commit()
-
 
 if __name__ == '__main__':
     
